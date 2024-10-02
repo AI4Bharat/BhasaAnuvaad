@@ -33,7 +33,7 @@ class BuildAlignerManifest(BaseStep):
             tokenizer=processor.tokenizer,
             feature_extractor=processor.feature_extractor,
             torch_dtype=torch.float16,
-            device="cpu",
+            device="cuda",
         )
         self.output_manifest_path = self.get_state("aligner_manifest_path")
         self.audio_out_path = self.get_state("final_audio_path")
