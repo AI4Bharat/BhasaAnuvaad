@@ -94,7 +94,7 @@ class BuildFinalManifest(BaseStep):
         sim, ind = idx.search(x, k)
         return sim, ind
 
-    def _knnGPU(x, y, k, mem=5 * 1024 * 1024 * 1024):
+    def _knnGPU(self, x, y, k, mem=5 * 1024 * 1024 * 1024):
         dim = x.shape[1]
         batch_size = mem // (dim * 4)
         sim = np.zeros((x.shape[0], k), dtype=np.float32)
@@ -316,3 +316,7 @@ class BuildFinalManifest(BaseStep):
                 f"{self.manifest_out_folder}/manifest_{self.language}.jsonl", "a+"
             ) as fhand:
                 fhand.write("\n".join(manifest) + "\n")
+
+    def cleanup(self):
+        del self.encoder
+        del self.tokenizer
