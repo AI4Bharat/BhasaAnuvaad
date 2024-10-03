@@ -10,6 +10,8 @@ class BaseStep:
             and callable(subclass.initialise)
             and hasattr(subclass, "run")
             and callable(subclass.run)
+            and hasattr(subclass, "cleanup")
+            and callable(subclass.cleanup)
             or NotImplemented
         )
 
@@ -21,4 +23,9 @@ class BaseStep:
     @abc.abstractmethod
     def run(self, **kwargs) -> Any:
         """Run pipeline step"""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def cleanup(self) -> Any:
+        """Deallocate pipeline step resources"""
         raise NotImplementedError

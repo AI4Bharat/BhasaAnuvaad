@@ -2,7 +2,7 @@ import copy
 import importlib
 import math
 import os
-from dataclasses import dataclass, field, is_dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -184,27 +184,6 @@ class Aligner(BaseStep):
                     " exactly 3 elements."
                 )
 
-        # Validate manifest contents
-        if not is_entry_in_all_lines(self.cfg.manifest_filepath, "audio_filepath"):
-            raise RuntimeError(
-                "At least one line in manifest_filepath does not contain an 'audio_filepath' entry. "
-                "All lines must contain an 'audio_filepath' entry."
-            )
-
-        if self.cfg.align_using_pred_text:
-            if is_entry_in_any_lines(self.cfg.manifest_filepath, "pred_text"):
-                raise RuntimeError(
-                    "Cannot specify align_using_pred_text=True when the manifest at manifest_filepath "
-                    "contains 'pred_text' entries. This is because the audio will be transcribed and may produce "
-                    "a different 'pred_text'. This may cause confusion."
-                )
-        else:
-            if not is_entry_in_all_lines(self.cfg.manifest_filepath, "text"):
-                raise RuntimeError(
-                    "At least one line in manifest_filepath does not contain a 'text' entry. "
-                    "NFA requires all lines to contain a 'text' entry when align_using_pred_text=False."
-                )
-
         # init devices
         if self.cfg.transcribe_device is None:
             self.transcribe_device = torch.device(
@@ -324,7 +303,7 @@ class Aligner(BaseStep):
         )
         os.makedirs(output_dir, exist_ok=True)
         tgt_manifest_filepath = str(Path(output_dir) / tgt_manifest_name)
-        self.f_manifest_out = open(tgt_manifest_filepath, "w")
+        self.f_manifest_out = open(tgt_manifest_filepath, "a+")
 
     def run(self) -> Any:
         # get alignment and save in CTM batch-by-batch
@@ -397,3 +376,6 @@ class Aligner(BaseStep):
                 )
 
         self.f_manifest_out.close()
+
+    def cleanup(self):
+        del self.model

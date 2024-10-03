@@ -19,6 +19,7 @@ class BuildAlignerManifest(BaseStep):
         infra: Dict[str, int],
         model_id: str,
         split_chars: List[str],
+        transcribe_device: str,
     ) -> Any:
         model = AutoModelForSpeechSeq2Seq.from_pretrained(
             model_id,
@@ -33,7 +34,7 @@ class BuildAlignerManifest(BaseStep):
             tokenizer=processor.tokenizer,
             feature_extractor=processor.feature_extractor,
             torch_dtype=torch.float16,
-            device="cuda",
+            device=transcribe_device,
         )
         self.output_manifest_path = self.get_state("aligner_manifest_path")
         self.audio_out_path = self.get_state("final_audio_path")
@@ -100,3 +101,6 @@ class BuildAlignerManifest(BaseStep):
 
             with open(out_manifest_path, "a+") as fhand:
                 fhand.write(json_line)
+
+    def cleanup(self):
+        del self.model
