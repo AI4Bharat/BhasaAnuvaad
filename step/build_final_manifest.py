@@ -42,7 +42,22 @@ class BuildFinalManifest(BaseStep):
         self.tokenizer = AutoTokenizer.from_pretrained(
             "cointegrated/SONAR_200_text_encoder"
         )
-        self.sonar_lang_mapping = {"en": "eng_Latn", "hi": "hin_Deva"}
+        self.sonar_lang_mapping = {
+            "en":"eng_Latn",
+            "hi":"hin_Deva",
+            "bn":"ben_Beng",
+            "gu":"guj_Gujr",
+            "kn":"kan_Knda",
+            "ml":"mal_Mlym",
+            "mr":"mar_Deva",
+            "or":"ory_Orya",
+            "pa":"pan_Guru",
+            "ta":"tam_Taml",
+            "te":"tel_Telu",
+            "ur":"urd_Arab",
+            "mni":"mni_Beng",
+            "as":"asm_Beng",
+        }
 
         self.language = self.get_state("aligner_language")
         self.aligner_language_id = self.get_state("aligner_language_id")
