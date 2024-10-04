@@ -100,7 +100,7 @@ class BuildAlignerManifest(BaseStep):
             )
 
             with open(out_manifest_path, "a+") as fhand:
-                fhand.write(json_line)
+                fhand.write(json_line + "\n")
 
     def cleanup(self):
         del self.model
