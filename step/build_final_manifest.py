@@ -261,7 +261,8 @@ class BuildFinalManifest(BaseStep):
             segment_pred_sents.append(i[3])
             manifest.append(
                 {
-                    "audio_filepath": segment_line["audio_filepath"],
+                    "course_id": input_line["course_id"],
+                    "video_id": input_line["video_id"],
                     "text": i[2],
                     "pred_text": i[3],
                     "start_time": i[0],
