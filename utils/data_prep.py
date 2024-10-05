@@ -767,9 +767,6 @@ def add_t_start_end_to_utt_obj(utt_obj, alignment_utt, output_timestep_duration)
             else:
                 token.t_end = -1
 
-        # print(segment_or_token)
-        # input()
-
     return utt_obj
 
 
@@ -798,15 +795,11 @@ def get_chunks(audio_filepaths_batch: List[str]):
             speech_timestamps[-1]["end"] / sample_rate, 3
         )
 
-        # input(speech_timestamps)
         adjusted_timestamps = adjust_timestamps(speech_timestamps, sample_rate, 25, 5)
-        # final_timestamps =
 
-        # input(adjusted_timestamps)
         tmpdirname = tempfile.TemporaryDirectory()
         current_chunk_paths = []
         for i, speech_dict in enumerate(adjusted_timestamps):
-            # input(tmpdirname.name)
             path = tmpdirname.name + f"/{i}.wav"
             save_audio(
                 path,
@@ -1070,8 +1063,6 @@ def get_batch_variables(
                 )
                 if type(hypotheses) == tuple and len(hypotheses) == 2:
                     hypotheses = hypotheses[0]
-
-            input(hypotheses[0].y_sequence.shape)
 
         else:
             with torch.no_grad():
