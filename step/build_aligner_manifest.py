@@ -9,7 +9,6 @@ from pydub import AudioSegment
 from pydub.effects import normalize as pydub_normalize
 from step_decorator import Step
 from tqdm import tqdm
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
 
 @Step("build_aligner_manifest")
@@ -17,29 +16,11 @@ class BuildAlignerManifest(BaseStep):
     def initialise(
         self,
         infra: Dict[str, int],
-        model_id: str,
-        split_chars: List[str],
         transcribe_device: str,
     ) -> Any:
-        model = AutoModelForSpeechSeq2Seq.from_pretrained(
-            model_id,
-            torch_dtype=torch.float16,
-            # low_cpu_mem_usage=True,
-            use_safetensors=True,
-        )
-        processor = AutoProcessor.from_pretrained(model_id)
-        self.model = pipeline(
-            "automatic-speech-recognition",
-            model=model,
-            tokenizer=processor.tokenizer,
-            feature_extractor=processor.feature_extractor,
-            torch_dtype=torch.float16,
-            device=transcribe_device,
-        )
         self.output_manifest_path = self.get_state("aligner_manifest_path")
         self.audio_out_path = self.get_state("final_audio_path")
         self.language = self.get_state("aligner_language")
-        self.split_chars = split_chars
 
         os.makedirs(self.output_manifest_path, exist_ok=True)
         os.makedirs(f"{self.audio_out_path}/{self.language}", exist_ok=True)
@@ -51,10 +32,6 @@ class BuildAlignerManifest(BaseStep):
         sound.export(out_path, "wav")
 
         return sound.duration_seconds
-
-    def _get_transcript(self, audio_path: str):
-        result = self.model(audio_path)
-        return result["text"]
 
     def _clean_text(self, text: str):
         text = re.sub("[-_\n\s]+", " ", text)
@@ -85,16 +62,13 @@ class BuildAlignerManifest(BaseStep):
             wav_path = f"{self.audio_out_path}/{self.language}/{wav_name}"
             duration = self._process_audio(in_path, wav_path)
 
-            if js.get("alignment_text_path") is None:
-                text = self._get_transcript(wav_path)
-            else:
-                with open(js["alignment_text_path"]) as fhand:
-                    text = fhand.read().strip()
+            with open(js["alignment_text_path"]) as fhand:
+                text = fhand.read().strip()
 
             json_line = json.dumps(
                 {
                     "audio_filepath": wav_path,
-                    "text": self._clean_text(text),
+                    "text": self._clean_text(text, ),
                     "duration": duration,
                 }
             )
@@ -103,4 +77,4 @@ class BuildAlignerManifest(BaseStep):
                 fhand.write(json_line + "\n")
 
     def cleanup(self):
-        del self.model
+        pass
