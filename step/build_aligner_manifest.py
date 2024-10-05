@@ -33,11 +33,11 @@ class BuildAlignerManifest(BaseStep):
 
         return sound.duration_seconds
 
-    def _clean_text(self, text: str):
+    def _clean_text(self, text: str, split_chars: List[str]):
         text = re.sub("[-_\n\s]+", " ", text)
         sents = [
             sent.strip()
-            for sent in re.split("[" + "".join(self.split_chars) + "]", text)
+            for sent in re.split("[" + "".join(split_chars) + "]", text)
             if sent.strip() != ""
         ]
         return "ɘ".join(sents)
@@ -65,10 +65,11 @@ class BuildAlignerManifest(BaseStep):
             with open(js["alignment_text_path"]) as fhand:
                 text = fhand.read().strip()
 
+            split_chars = js["alignment_separator"].strip()
             json_line = json.dumps(
                 {
                     "audio_filepath": wav_path,
-                    "text": self._clean_text(text, ),
+                    "text": self._clean_text(text, split_chars),
                     "duration": duration,
                 }
             )
