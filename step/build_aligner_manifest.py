@@ -16,7 +16,6 @@ class BuildAlignerManifest(BaseStep):
     def initialise(
         self,
         infra: Dict[str, int],
-        transcribe_device: str,
     ) -> Any:
         self.output_manifest_path = self.get_state("aligner_manifest_path")
         self.audio_out_path = self.get_state("final_audio_path")
