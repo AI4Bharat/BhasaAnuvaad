@@ -17,7 +17,7 @@ import string
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 import soundfile as sf
 import torch
@@ -788,6 +788,8 @@ def get_chunks(audio_filepaths_batch: List[str]):
                 speech_timestamps[i]["end"] / sample_rate, 3
             )
 
+        speech_timestamps[-1]["end"] = len(wav) - 1
+
         # get secs for the last chunk
         speech_timestamps[-1]["start_secs"] = round(
             speech_timestamps[-1]["start"] / sample_rate, 3
@@ -812,7 +814,10 @@ def get_chunks(audio_filepaths_batch: List[str]):
             )
             current_chunk_paths.append(path)
 
-        tmp_paths[tmpdirname] = current_chunk_paths
+        tmp_paths[tmpdirname] = {
+            "chunk_paths": current_chunk_paths,
+            "speech_timestamps": adjusted_timestamps,
+        }
 
     return tmp_paths
 
@@ -832,6 +837,8 @@ def adjust_timestamps(
 
     if not speech_timestamps:
         return []
+
+    speech_timestamps[0]["start"] = 0
 
     # Store timestamps in seconds
     for speech_dict in speech_timestamps:
@@ -937,6 +944,39 @@ def windowed_chunking(
     return chunked_timestamps
 
 
+def get_output_timestep_duration(
+    speech_timestamp: Dict[str, Any], timesteps: int, sample_rate: int
+):
+    chunk_duration = (speech_timestamp["end"] - speech_timestamp["start"]) / sample_rate
+    output_timestep_duration = round(
+        chunk_duration / timesteps,
+        2,
+    )
+
+    return output_timestep_duration
+
+
+def resize_model_output(
+    output: torch.Tensor,
+    speech_timestamp: Dict[str, Any],
+    output_timestep_duration_logits: int,
+):
+    required_timesteps = round(
+        (speech_timestamp["end"] - speech_timestamp["start"])
+        / output_timestep_duration_logits
+    )
+
+    if output.shape[0] > required_timesteps:
+        return output[:required_timesteps, :]
+    else:
+        blanks_timesteps = required_timesteps - output.shape[0]
+        blanks = torch.zeros((blanks_timesteps, output.shape[1])).to(
+            device=output.device
+        )
+        blanks[:, -1] = 1
+        return torch.cat((output, blanks), axis=0)
+
+
 def get_batch_variables(
     manifest_lines_batch,
     model: Union[EncDecHybridRNNTCTCModel | EncDecCTCModel],
@@ -972,14 +1012,15 @@ def get_batch_variables(
     if not use_buffered_chunked_streaming:
         if not simulate_cache_aware_streaming:
             if use_silero_vad:
-                file_paths: Dict[tempfile.TemporaryDirectory, List[str]] = get_chunks(
-                    audio_filepaths_batch
+                file_paths: Dict[tempfile.TemporaryDirectory, Dict[str, List[Any]]] = (
+                    get_chunks(audio_filepaths_batch)
                 )
                 with torch.no_grad():
                     hypotheses = []
-                    for tmp_dir, file_path_list in file_paths.items():
+                    output_timestep_duration_logits = 0
+                    for tmp_dir, v in file_paths.items():
                         tmp_hypotheses = model.transcribe(
-                            file_path_list,
+                            v["chunk_paths"],
                             return_hypotheses=True,
                             batch_size=vad_chunked_batch_size,
                             language_id=language_id,
@@ -987,8 +1028,30 @@ def get_batch_variables(
                         if type(tmp_hypotheses) == tuple and len(tmp_hypotheses) == 2:
                             tmp_hypotheses = tmp_hypotheses[0]
 
+                        if not output_timestep_duration:
+                            output_timestep_duration = get_output_timestep_duration(
+                                v["speech_timestamps"][0],
+                                tmp_hypotheses[0].y_sequence.shape[0],
+                                model.cfg.preprocessor.sample_rate,
+                            )
+
+                        output_timestep_duration_logits = (
+                            output_timestep_duration
+                            * model.cfg.preprocessor.sample_rate
+                        )
+
+                        tmp_hypotheses[0].y_sequence = resize_model_output(
+                            tmp_hypotheses[0].y_sequence,
+                            v["speech_timestamps"][0],
+                            output_timestep_duration_logits,
+                        )
                         hypotheses.append(tmp_hypotheses[0])
                         for i in range(1, len(tmp_hypotheses)):
+                            tmp_hypotheses[i].y_sequence = resize_model_output(
+                                tmp_hypotheses[i].y_sequence,
+                                v["speech_timestamps"][i],
+                                output_timestep_duration_logits,
+                            )
                             hypotheses[-1].y_sequence = torch.cat(
                                 (
                                     hypotheses[-1].y_sequence,
@@ -1007,6 +1070,8 @@ def get_batch_variables(
                 )
                 if type(hypotheses) == tuple and len(hypotheses) == 2:
                     hypotheses = hypotheses[0]
+
+            input(hypotheses[0].y_sequence.shape)
 
         else:
             with torch.no_grad():
