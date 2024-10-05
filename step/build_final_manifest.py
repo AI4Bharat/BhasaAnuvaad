@@ -310,7 +310,7 @@ class BuildFinalManifest(BaseStep):
                         f"{lang_id}_text": input_sents[inp_idx]
                         if inp_idx != -1
                         else "",
-                        f"{lang_id}_sonar_score": score if inp_idx != -1 else 0,
+                        f"{lang_id}_mining_score": score if inp_idx != -1 else 0,
                     }
                 )
 
