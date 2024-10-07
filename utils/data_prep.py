@@ -845,23 +845,13 @@ def adjust_timestamps(
     curr_end_secs = speech_timestamps[0]["end_secs"]
 
     for i in range(1, len(speech_timestamps)):
-        chunk_gap = speech_timestamps[i]["start_secs"] - curr_end_secs
-        merged_chunks_duration = speech_timestamps[i]["end_secs"] - curr_start_secs
         chunk_duration = curr_end_secs - curr_start_secs
 
         if chunk_duration < min_chunk_duration_s:
             curr_end_secs = speech_timestamps[i]["end_secs"]
             continue
 
-        # If the gap between the previous chunk and the current chunk is less
-        # than 3 seconds, and the previous chunk and current chunk put together
-        # are less than equal to the maximum chunk duration, merge the chunks
-        # by setting the end timestamp to the current chunk's end timestamp.
-        if chunk_gap < 3 and merged_chunks_duration <= max_chunk_duration_s:
-            curr_end_secs = speech_timestamps[i]["end_secs"]
-            continue
-
-        # Further pass the current chunk duration through windowed chunking to
+        # Pass the current chunk duration through windowed chunking to
         # ensure that the size is within max_chunk_duration_s.
         chunked_timestamps = windowed_chunking(
             curr_start,
