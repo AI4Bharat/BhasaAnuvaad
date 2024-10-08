@@ -264,7 +264,10 @@ class BuildFinalManifest(BaseStep):
     def _get_manifest_lines(
         self, input_line: Dict[str, Any], segment_line: Dict[str, Any]
     ):
-        ctm_path = segment_line["segments_level_ctm_filepath"]
+        ctm_path = segment_line.get("segments_level_ctm_filepath")
+        if ctm_path is None:
+            return None
+        
         data = self._read_ctm_file(ctm_path)
 
         manifest = []
@@ -328,10 +331,12 @@ class BuildFinalManifest(BaseStep):
             manifest = self._get_manifest_lines(
                 json.loads(input_line), json.loads(segment_line)
             )
-            with open(
-                f"{self.manifest_out_folder}/manifest_{self.language}.jsonl", "a+"
-            ) as fhand:
-                fhand.write("\n".join(manifest) + "\n")
+
+            if manifest is not None:
+                with open(
+                    f"{self.manifest_out_folder}/manifest_{self.language}.jsonl", "a+"
+                ) as fhand:
+                    fhand.write("\n".join(manifest) + "\n")
 
     def cleanup(self):
         del self.encoder
