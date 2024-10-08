@@ -2,6 +2,7 @@ import argparse
 from typing import Any, Dict, List
 
 import yaml
+
 from base import BaseStep
 from step import Aligner, BuildAlignerManifest, BuildFinalManifest
 
