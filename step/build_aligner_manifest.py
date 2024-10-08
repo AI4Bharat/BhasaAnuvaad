@@ -64,7 +64,7 @@ class BuildAlignerManifest(BaseStep):
             with open(js["alignment_text_path"]) as fhand:
                 text = fhand.read().strip()
 
-            split_chars = js["alignment_separator"].strip()
+            split_chars = js["alignment_separator"]
             json_line = json.dumps(
                 {
                     "audio_filepath": wav_path,
