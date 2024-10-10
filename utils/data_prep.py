@@ -776,6 +776,10 @@ def get_chunks(audio_filepaths_batch: List[str]):
     for file_path in audio_filepaths_batch:
         wav = read_audio(file_path)
         speech_timestamps = get_speech_timestamps(wav, model)
+
+        if len(speech_timestamps) == 0:
+            speech_timestamps.append({"start": 0, "end": len(wav) - 1})
+
         for i in range(0, len(speech_timestamps) - 1):
             speech_timestamps[i]["end"] = speech_timestamps[i + 1]["start"] - 1
             speech_timestamps[i]["start_secs"] = round(
