@@ -13,6 +13,8 @@ from step_decorator import Step
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from transformers.models.m2m_100.modeling_m2m_100 import M2M100Encoder
+import torch.nn.functional as F
+import torch
 
 
 @Step("build_final_manifest")
@@ -261,6 +263,17 @@ class BuildFinalManifest(BaseStep):
 
         return self._get_pairs(fwd_scores, x2y_ind)
 
+    def _mine_sentences_brute(self, segment_embeddings: torch.Tensor, input_embeddings: torch.Tensor):
+        segment_norm = F.normalize(segment_embeddings, p=2, dim=1)
+        input_norm = F.normalize(input_embeddings, p=2, dim=1)
+
+        similarity = torch.mm(segment_norm, input_norm.T)
+        max_values, max_indices = similarity.max(dim=1)
+
+        output = [(i, max_indices[i].item(), max_values[i].item()) for i in range(len(max_indices))]
+
+        return output
+
     def _get_manifest_lines(
         self, input_line: Dict[str, Any], segment_line: Dict[str, Any]
     ):
@@ -291,8 +304,6 @@ class BuildFinalManifest(BaseStep):
 
         segment_embeddings = (
             self._encode_mean_pool(segment_sents, self.aligner_language_id)
-            .cpu()
-            .numpy()
         )
 
         for mining in input_line["text_mining"]:
@@ -300,10 +311,10 @@ class BuildFinalManifest(BaseStep):
             input_sents = self._read_text(mining["path"], mining["separators"])
 
             input_embeddings = (
-                self._encode_mean_pool(input_sents, lang_id).cpu().numpy()
+                self._encode_mean_pool(input_sents, lang_id)
             )
 
-            pairs: List[Tuple[int, int, float]] = self._mine_sentences(
+            pairs: List[Tuple[int, int, float]] = self._mine_sentences_brute(
                 segment_embeddings, input_embeddings
             )
 
