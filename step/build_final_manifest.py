@@ -7,14 +7,13 @@ import enchant
 import faiss
 import numpy as np
 import torch
+import torch.nn.functional as F
 from base import BaseStep
 from pydub import AudioSegment
 from step_decorator import Step
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from transformers.models.m2m_100.modeling_m2m_100 import M2M100Encoder
-import torch.nn.functional as F
-import torch
 
 
 @Step("build_final_manifest")
@@ -45,20 +44,20 @@ class BuildFinalManifest(BaseStep):
             "cointegrated/SONAR_200_text_encoder"
         )
         self.sonar_lang_mapping = {
-            "en":"eng_Latn",
-            "hi":"hin_Deva",
-            "bn":"ben_Beng",
-            "gu":"guj_Gujr",
-            "kn":"kan_Knda",
-            "ml":"mal_Mlym",
-            "mr":"mar_Deva",
-            "or":"ory_Orya",
-            "pa":"pan_Guru",
-            "ta":"tam_Taml",
-            "te":"tel_Telu",
-            "ur":"urd_Arab",
-            "mni":"mni_Beng",
-            "as":"asm_Beng",
+            "en": "eng_Latn",
+            "hi": "hin_Deva",
+            "bn": "ben_Beng",
+            "gu": "guj_Gujr",
+            "kn": "kan_Knda",
+            "ml": "mal_Mlym",
+            "mr": "mar_Deva",
+            "or": "ory_Orya",
+            "pa": "pan_Guru",
+            "ta": "tam_Taml",
+            "te": "tel_Telu",
+            "ur": "urd_Arab",
+            "mni": "mni_Beng",
+            "as": "asm_Beng",
         }
 
         self.language = self.get_state("aligner_language")
@@ -263,14 +262,19 @@ class BuildFinalManifest(BaseStep):
 
         return self._get_pairs(fwd_scores, x2y_ind)
 
-    def _mine_sentences_brute(self, segment_embeddings: torch.Tensor, input_embeddings: torch.Tensor):
+    def _mine_sentences_brute(
+        self, segment_embeddings: torch.Tensor, input_embeddings: torch.Tensor
+    ):
         segment_norm = F.normalize(segment_embeddings, p=2, dim=1)
         input_norm = F.normalize(input_embeddings, p=2, dim=1)
 
         similarity = torch.mm(segment_norm, input_norm.T)
         max_values, max_indices = similarity.max(dim=1)
 
-        output = [(i, max_indices[i].item(), max_values[i].item()) for i in range(len(max_indices))]
+        output = [
+            (i, max_indices[i].item(), max_values[i].item())
+            for i in range(len(max_indices))
+        ]
 
         return output
 
@@ -278,9 +282,9 @@ class BuildFinalManifest(BaseStep):
         self, input_line: Dict[str, Any], segment_line: Dict[str, Any]
     ):
         ctm_path = segment_line.get("segments_level_ctm_filepath")
-        if ctm_path is None:
+        if ctm_path is None or not os.path.exists(ctm_path):
             return None
-        
+
         data = self._read_ctm_file(ctm_path)
 
         manifest = []
@@ -292,8 +296,6 @@ class BuildFinalManifest(BaseStep):
             segment_pred_sents.append(i[3])
             manifest.append(
                 {
-                    "course_id": input_line["course_id"],
-                    "video_id": input_line["video_id"],
                     "text": i[2],
                     "pred_text": i[3],
                     "start_time": i[0],
@@ -302,17 +304,21 @@ class BuildFinalManifest(BaseStep):
                 }
             )
 
-        segment_embeddings = (
-            self._encode_mean_pool(segment_sents, self.aligner_language_id)
+            if input_line.get("course_id"):
+                manifest[-1]["course_id"] = input_line["course_id"]
+                manifest[-1]["video_id"] = input_line["video_id"]
+            else:
+                manifest[-1]["audio_filepath"] = input_line["alignment_audio_path"]
+
+        segment_embeddings = self._encode_mean_pool(
+            segment_sents, self.aligner_language_id
         )
 
         for mining in input_line["text_mining"]:
             lang_id = mining["lang_id"]
             input_sents = self._read_text(mining["path"], mining["separators"])
 
-            input_embeddings = (
-                self._encode_mean_pool(input_sents, lang_id)
-            )
+            input_embeddings = self._encode_mean_pool(input_sents, lang_id)
 
             pairs: List[Tuple[int, int, float]] = self._mine_sentences_brute(
                 segment_embeddings, input_embeddings
