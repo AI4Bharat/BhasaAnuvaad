@@ -36,6 +36,18 @@ class BuildFinalManifest(BaseStep):
 
         self.input_manifest_path = self.get_state("input_manifest_path")
         self.manifest_out_folder = self.get_state("final_manifest")
+        self.language = self.get_state("aligner_language")
+        self.chunked_audio_out_folder = (
+            self.get_state("chunked_audio_path") + f"/{self.language}"
+        )
+        self.aligner_language_id = self.get_state("aligner_language_id")
+        self.segment_manifest_path = (
+            self.get_state("aligned_output_path")
+            + "/"
+            + self.language
+            + f"/manifest_{self.language}_with_output_file_paths.json"
+        )
+
         # Load text model and tokenizer
         self.encoder = M2M100Encoder.from_pretrained(
             "cointegrated/SONAR_200_text_encoder"
@@ -60,16 +72,8 @@ class BuildFinalManifest(BaseStep):
             "as": "asm_Beng",
         }
 
-        self.language = self.get_state("aligner_language")
-        self.aligner_language_id = self.get_state("aligner_language_id")
-        self.segment_manifest_path = (
-            self.get_state("aligned_output_path")
-            + "/"
-            + self.language
-            + f"/manifest_{self.language}_with_output_file_paths.json"
-        )
-
         os.makedirs(self.manifest_out_folder, exist_ok=True)
+        os.makedirs(self.chunked_audio_out_folder, exist_ok=True)
 
     def _read_ctm_file(self, ctm_path: str):
         with open(ctm_path, "r") as fhand:
@@ -82,8 +86,8 @@ class BuildFinalManifest(BaseStep):
             # 2 - start timestamp sec, 3 - duration sec, 4 - aligned text, 8 - aligned pred text
             data.append(
                 (
-                    parts[2],
-                    parts[3],
+                    float(parts[2]),
+                    float(parts[3]),
                     parts[4].replace("<space>", " ").strip(),
                     parts[8].replace("<space>", " ").strip(),
                 )
@@ -222,6 +226,25 @@ class BuildFinalManifest(BaseStep):
 
         return torch.cat(embs, axis=0)
 
+    def _chunk_audio(
+        self, audio_filepath: str, start_time: float, duration: float, idx: int
+    ):
+        dir = "".join(audio_filepath.split("/")[-1].split(".")[:-1])
+        out_folder = self.chunked_audio_out_folder + f"/{dir}"
+        final_audio_path = f"{out_folder}/{idx}.wav"
+
+        os.makedirs(out_folder, exist_ok=True)
+
+        start = round(start_time * 1000)
+        end = start + round(duration * 1000)
+
+        audio = AudioSegment.from_wav(audio_filepath)
+
+        sound_clip = audio[start:end]
+        sound_clip.export(final_audio_path)
+
+        return final_audio_path
+
     def _mine_sentences(
         self, segment_embeddings: np.ndarray, input_embeddings: np.ndarray
     ):
@@ -291,24 +314,28 @@ class BuildFinalManifest(BaseStep):
 
         segment_sents = []
         segment_pred_sents = []
-        for i in data:
-            segment_sents.append(i[2])
-            segment_pred_sents.append(i[3])
+        for idx, row in enumerate(data):
+            chunked_audio_filepath = self._chunk_audio(
+                segment_line["audio_filepath"], row[0], row[1], idx
+            )
+            segment_sents.append(row[2])
+            segment_pred_sents.append(row[3])
             manifest.append(
                 {
-                    "text": i[2],
-                    "pred_text": i[3],
-                    "start_time": i[0],
-                    "duration": i[1],
-                    "alignment_score": self._calculate_alignment_score(i[2], i[3]),
+                    "text": row[2],
+                    "pred_text": row[3],
+                    "start_time": row[0],
+                    "duration": row[1],
+                    "alignment_score": self._calculate_alignment_score(row[2], row[3]),
+                    "audio_filepath_original": input_line["alignment_audio_path"],
+                    "audio_filepath": segment_line["audio_filepath"],
+                    "chunked_audio_filepath": chunked_audio_filepath,
                 }
             )
 
             if input_line.get("course_id"):
                 manifest[-1]["course_id"] = input_line["course_id"]
                 manifest[-1]["video_id"] = input_line["video_id"]
-            else:
-                manifest[-1]["audio_filepath"] = input_line["alignment_audio_path"]
 
         segment_embeddings = self._encode_mean_pool(
             segment_sents, self.aligner_language_id
@@ -317,6 +344,9 @@ class BuildFinalManifest(BaseStep):
         for mining in input_line["text_mining"]:
             lang_id = mining["lang_id"]
             input_sents = self._read_text(mining["path"], mining["separators"])
+
+            if len(input_sents) == 0:
+                continue
 
             input_embeddings = self._encode_mean_pool(input_sents, lang_id)
 
