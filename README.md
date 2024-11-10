@@ -7,4 +7,4 @@
 
 BhasaAnuvaad, is the largest Indic-language AST dataset spanning over 44,400 hours of speech and 17M text segments for 13 of 22 scheduled Indian languages and English.
 
-This repository contains code for the pipeline used to generate the final dataset in the NeMo format. It uses the [NeMo Forced Aligner](https://github.com/AI4Bharat/NeMo.git) to align sentences with their audio chunks, and then performs bi-text mining by using the [Sonar Speech Encoder](https://github.com/facebookresearch/SONAR) to generate embeddings followed by the calculation of Cosine Similarity scores.
+This repository contains code for the pipeline used to generate the final dataset in the NeMo format. It uses the [NeMo Forced Aligner](https://github.com/AI4Bharat/NeMo.git) to align sentences with their audio chunks, and then performs bi-text mining by using the [Sonar Text Encoder](https://github.com/facebookresearch/SONAR) to generate embeddings followed by the calculation of Cosine Similarity scores.
