@@ -1,0 +1,61 @@
+pipeline:
+  global:
+    input_manifest_path: path/to/input/manifest.jsonl
+
+    # hindi, bengali, etc
+    aligner_language: language
+
+    # hi, bn, etc
+    aligner_language_id: language_id
+
+    # output directories for generated temporary files
+    # all the directories below will be autocreated
+    aligner_manifest_path: path/to/output/aligner_manifests
+    final_audio_path: path/to/output/final_audios
+    chunked_audio_path: path/to/output/chunked_audios
+    aligned_output_path: path/to/output/aligned_output
+    final_manifest: path/to/output/final_manifest
+  steps:
+    aligner:
+      params:
+        # use only one of these - either download the model using model name from nvidia servers
+        # or use a pre-downloaded model with its path
+        pretrained_name: "stt_hi_conformer_ctc_large"
+        model_path: "path/to/nemo/model.nemo"
+        
+        # uncomment if using any AI4Bharat IndicConformer model except the Hindi IndicConformer
+        # custom_model_class: IndicConformer
+        
+        # nemo configuration
+        viterbi_device: cuda
+        transcribe_device: cuda
+
+        # number of aligner manifest rows to process in a batch 
+        manifest_batch_size: 1
+
+        # enable/disable Silero VAD chunking before ASR model inference
+        use_silero_vad: True
+
+        # if using vad chunking, set batch size for audio chunks
+        # optional - only enable if using VAD chunking 
+        vad_chunked_batch_size: 200
+
+        # fixed non-standard character for demarcating the end of a sentence
+        # can be any string - just ensure it isn't present in your corpus
+        additional_segment_grouping_separator: "ɘ"
+    build_final_manifest:
+      params:
+        # sonar text encoder batch size
+        batch_size: 100
+
+        # currently the pipeline uses a cosine similarity based algorithm to perform bi-text mining,
+        # so these params are unused. To enable knn based mining, change the '_mine_sentences_brute'
+        # function call to '_mine_sentences' in line 353 in step/build_final_manifest.py
+        # this is based on https://github.com/facebookresearch/LASER/blob/main/source/mine_bitexts.py
+        knn_neighborhood: 4 # knn neighbourhood size
+        margin_algorithm: ratio # LASER algorithm to calculate mining scores
+        
+        sonar_device: cuda
+
+        # only used if using LASER based mining 
+        mining_device: cuda
