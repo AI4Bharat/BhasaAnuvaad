@@ -13,8 +13,7 @@ def run_pipeline(pipeline: List[BaseStep], pipeline_config: Dict[str, Any]):
 
     for item in pipeline:
         params = pipeline_config["pipeline"]["steps"][item.get_id()].get("params", {})
-        infra = pipeline_config["pipeline"]["steps"][item.get_id()]["infra"]
-        item.initialise(infra, **params)
+        item.initialise({}, **params)
         print(f"Running {item.get_id()}")
         item.run()
         print(f"Finished running {item.get_id()}")
