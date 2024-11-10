@@ -1,12 +1,12 @@
 import copy
 import importlib
+import json
 import math
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import glob2
 import torch
 from base import BaseStep
 from nemo.collections.asr.models.ctc_models import EncDecCTCModel
@@ -16,13 +16,12 @@ from nemo.collections.asr.parts.utils.transcribe_utils import setup_model
 from nemo.utils import logging
 from omegaconf import OmegaConf
 from step_decorator import Step
+from tqdm import tqdm
 from utils.data_prep import (
     add_t_start_end_to_utt_obj,
     get_batch_starts_ends,
     get_batch_variables,
     get_manifest_lines_batch,
-    is_entry_in_all_lines,
-    is_entry_in_any_lines,
 )
 from utils.make_ass_files import make_ass_files
 from utils.make_ctm_files import make_ctm_files
@@ -119,7 +118,13 @@ class Aligner(BaseStep):
 
         output_dir = self.get_state("aligned_output_path") + f"/{language}"
 
-        self.done = list(glob2.iglob(f"{output_dir}/ctm/segments/*.ctm"))
+        with open(
+            f"{output_dir}/manifest_{language}_with_output_file_paths.json"
+        ) as fhand:
+            self.done = [
+                json.loads(line)["audio_filepath"] for line in fhand.readlines()
+            ]
+
         self.cfg = AlignmentConfig(
             pretrained_name=pretrained_name,
             model_path=model_path,
@@ -307,17 +312,13 @@ class Aligner(BaseStep):
 
     def run(self) -> Any:
         # get alignment and save in CTM batch-by-batch
-        for start, end in zip(self.starts, self.ends):
+        for start, end in tqdm(zip(self.starts, self.ends)):
             manifest_lines_batch = get_manifest_lines_batch(
                 self.cfg.manifest_filepath, start, end, self.cfg.language_id
             )
 
             done = sum(
-                [
-                    f'{self.cfg.output_dir}/ctm/segments/{line["audio_filepath"].split("/")[-1][:-4]}.ctm'
-                    in self.done
-                    for line in manifest_lines_batch
-                ]
+                [line["audio_filepath"] in self.done for line in manifest_lines_batch]
             )
             if done == self.cfg.manifest_batch_size:
                 continue
