@@ -1,7 +1,7 @@
 # BhasaAnuvaad: A Speech Translation Dataset for 13 Indian Languages
 
 
-[![ArXiv](https://img.shields.io/badge/arXiv-2411.02538-b31b1b.svg)](https://arxiv.org/abs/2411.02538)     [![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Datasets-yellow)](https://huggingface.co/collections/ai4bharat/bhasaanuvaad-672b3790b6470eab68b1cb87) [![CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+[![ArXiv](https://img.shields.io/badge/arXiv-2411.02538-b31b1b.svg)](http://arxiv.org/abs/2411.04699)     [![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Datasets-yellow)](https://huggingface.co/collections/ai4bharat/bhasaanuvaad-672b3790b6470eab68b1cb87) [![CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
 ## Overview
 
@@ -34,11 +34,14 @@ python3 main.py -c config.yaml
 If you use BhasaAnuvaad in your work, please cite us:
 
 ```bibtex
-@article{sparsh2024bhasaanuvaad,
-  title   = {BhasaAnuvaad: A Speech Translation Dataset for 13 Indian Languages},
-  author  = {Sparsh Jain and Ashwin Sankar and Devilal Choudhury and Dhairya Suman and Nikhil Narasimhan and Mohammed Safi Ur Rahman Khan and Anoop Kunchukuttan and Mitesh M Khapra and Raj Dabre},
-  year    = {2024},
-  journal = {arXiv preprint arXiv: 2411.02538}
+@misc{jain2024bhasaanuvaadspeechtranslationdataset,
+      title={BhasaAnuvaad: A Speech Translation Dataset for 13 Indian Languages}, 
+      author={Sparsh Jain and Ashwin Sankar and Devilal Choudhary and Dhairya Suman and Nikhil Narasimhan and Mohammed Safi Ur Rahman Khan and Anoop Kunchukuttan and Mitesh M Khapra and Raj Dabre},
+      year={2024},
+      eprint={2411.04699},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2411.04699}, 
 }
 ```
 
@@ -50,15 +53,15 @@ This dataset is released under the [CC BY 4.0](https://creativecommons.org/licen
 
 For any questions or feedback, please contact:
 - Raj Dabre (raj.dabre@cse.iitm.ac.in)
-- Sparsh Jain (sparshjain@ai4bharat.org)
+- Sparsh Jain (sjshiva8287@gmail.com)
 - Ashwin Sankar (ashwinsankar@ai4bharat.org)
 - Nikhil Narasimhan (nikhilnarasimhan@ai4bharat.org)
-- Mohammed Safi Ur Rahman Khan (safikhan@ai4bharat.org)
+- Mohammed Safi Ur Rahman Khan (safikhan2000@gmail.com)
 
 ## Links
 
 - [GitHub Repository 💻](https://github.com/AI4Bharat/BhasaAnuvaad.git)
-- [Paper 📄](https://arxiv.org/abs/2411.02538)
+- [Paper 📄](http://arxiv.org/abs/2411.04699)
 - [Hugging Face Dataset 🤗](https://huggingface.co/collections/ai4bharat/bhasaanuvaad-672b3790b6470eab68b1cb87)
 
 
