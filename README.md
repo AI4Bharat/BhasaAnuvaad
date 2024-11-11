@@ -51,7 +51,7 @@ This dataset is released under the [CC BY 4.0](https://creativecommons.org/licen
 For any questions or feedback, please contact:
 - Raj Dabre (raj.dabre@cse.iitm.ac.in)
 - Sparsh Jain (sjshiva8287@gmail.com)
-- Ashwin Sankar (ashwinsankar@ai4bharat.org)
+- Ashwin Sankar (ashwins1211@gmail.com)
 - Nikhil Narasimhan (nikhilnarasimhan@ai4bharat.org)
 - Mohammed Safi Ur Rahman Khan (safikhan2000@gmail.com)
 
