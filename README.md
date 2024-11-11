@@ -35,13 +35,13 @@ If you use BhasaAnuvaad in your work, please cite us:
 
 ```bibtex
 @misc{jain2024bhasaanuvaadspeechtranslationdataset,
-      title={BhasaAnuvaad: A Speech Translation Dataset for 13 Indian Languages}, 
-      author={Sparsh Jain and Ashwin Sankar and Devilal Choudhary and Dhairya Suman and Nikhil Narasimhan and Mohammed Safi Ur Rahman Khan and Anoop Kunchukuttan and Mitesh M Khapra and Raj Dabre},
-      year={2024},
-      eprint={2411.04699},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2411.04699}, 
+      title = {BhasaAnuvaad: A Speech Translation Dataset for 13 Indian Languages}, 
+      author = {Sparsh Jain and Ashwin Sankar and Devilal Choudhary and Dhairya Suman and Nikhil Narasimhan and Mohammed Safi Ur Rahman Khan and Anoop Kunchukuttan and Mitesh M Khapra and Raj Dabre},
+      year = {2024},
+      eprint = {2411.04699},
+      archivePrefix = {arXiv},
+      primaryClass = {cs.CL},
+      url = {https://arxiv.org/abs/2411.04699}, 
 }
 ```
 
