@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import enchant
 import faiss
@@ -63,6 +63,7 @@ class BuildFinalManifest(BaseStep):
             "kn": "kan_Knda",
             "ml": "mal_Mlym",
             "mr": "mar_Deva",
+            "ne": "npi_Deva",
             "or": "ory_Orya",
             "pa": "pan_Guru",
             "ta": "tam_Taml",
@@ -70,6 +71,7 @@ class BuildFinalManifest(BaseStep):
             "ur": "urd_Arab",
             "mni": "mni_Beng",
             "as": "asm_Beng",
+            "sd": "snd_Arab",
         }
 
         os.makedirs(self.manifest_out_folder, exist_ok=True)
@@ -95,9 +97,11 @@ class BuildFinalManifest(BaseStep):
 
         return data
 
-    def _read_text(self, text_path: str, separators: List[str]):
-        with open(text_path, "r") as fhand:
-            text = fhand.read()
+    def _read_text(self, text: Optional[str], path: Optional[str], separators: List[str]):
+        if text is None:
+            with open(path, "r") as fhand:
+                text = fhand.read()
+
         text = re.sub("[-_\n\s]+", " ", text)
         sents = [
             sent.strip()
@@ -343,7 +347,7 @@ class BuildFinalManifest(BaseStep):
 
         for mining in input_line["text_mining"]:
             lang_id = mining["lang_id"]
-            input_sents = self._read_text(mining["path"], mining["separators"])
+            input_sents = self._read_text(mining.get("text"), mining.get("path"), mining["separators"])
 
             if len(input_sents) == 0:
                 continue

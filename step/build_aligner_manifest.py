@@ -60,9 +60,15 @@ class BuildAlignerManifest(BaseStep):
             wav_name = in_path.split("/")[-1][:-3] + "wav"
             wav_path = f"{self.audio_out_path}/{self.language}/{wav_name}"
             duration = self._process_audio(in_path, wav_path)
-
-            with open(js["alignment_text_path"]) as fhand:
-                text = fhand.read().strip()
+            
+            text = js.get("alignment_text", "")
+            if text:
+                text = js["alignment_text"].strip()
+            elif text is None:
+                continue
+            else:
+                with open(js["alignment_text_path"]) as fhand:
+                    text = fhand.read().strip()
 
             split_chars = js["alignment_separator"]
             json_line = json.dumps(

@@ -118,12 +118,15 @@ class Aligner(BaseStep):
 
         output_dir = self.get_state("aligned_output_path") + f"/{language}"
 
-        with open(
-            f"{output_dir}/manifest_{language}_with_output_file_paths.json"
-        ) as fhand:
-            self.done = [
-                json.loads(line)["audio_filepath"] for line in fhand.readlines()
-            ]
+        if os.path.exists(f"{output_dir}/manifest_{language}_with_output_file_paths.json"):
+            with open(
+                f"{output_dir}/manifest_{language}_with_output_file_paths.json"
+            ) as fhand:
+                self.done = [
+                    json.loads(line)["audio_filepath"] for line in fhand.readlines()
+                ]
+        else:
+            self.done = []
 
         self.cfg = AlignmentConfig(
             pretrained_name=pretrained_name,
