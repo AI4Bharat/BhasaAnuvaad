@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import enchant
 import faiss
@@ -72,6 +72,7 @@ class BuildFinalManifest(BaseStep):
             "mni": "mni_Beng",
             "as": "asm_Beng",
             "sd": "snd_Arab",
+            "sa": "san_Deva",
         }
 
         os.makedirs(self.manifest_out_folder, exist_ok=True)
@@ -97,7 +98,9 @@ class BuildFinalManifest(BaseStep):
 
         return data
 
-    def _read_text(self, text: Optional[str], path: Optional[str], separators: List[str]):
+    def _read_text(
+        self, text: Optional[str], path: Optional[str], separators: List[str]
+    ):
         if text is None:
             with open(path, "r") as fhand:
                 text = fhand.read()
@@ -105,7 +108,7 @@ class BuildFinalManifest(BaseStep):
         text = re.sub("[-_\n\s]+", " ", text)
         sents = [
             sent.strip()
-            for sent in re.split("[" + "".join(separators) + "]", text)
+            for sent in re.split("|".join(map(re.escape, separators)), text)
             if sent.strip() != ""
         ]
 
@@ -339,6 +342,8 @@ class BuildFinalManifest(BaseStep):
 
             if input_line.get("course_id"):
                 manifest[-1]["course_id"] = input_line["course_id"]
+
+            if input_line.get("video_id"):
                 manifest[-1]["video_id"] = input_line["video_id"]
 
         segment_embeddings = self._encode_mean_pool(
@@ -347,7 +352,9 @@ class BuildFinalManifest(BaseStep):
 
         for mining in input_line["text_mining"]:
             lang_id = mining["lang_id"]
-            input_sents = self._read_text(mining.get("text"), mining.get("path"), mining["separators"])
+            input_sents = self._read_text(
+                mining.get("text"), mining.get("path"), mining["separators"]
+            )
 
             if len(input_sents) == 0:
                 continue
@@ -368,7 +375,7 @@ class BuildFinalManifest(BaseStep):
                     }
                 )
 
-        return [json.dumps(line) for line in manifest]
+        return [json.dumps(line, ensure_ascii=False) for line in manifest]
 
     def run(self):
         with open(self.segment_manifest_path, "r") as fhand:

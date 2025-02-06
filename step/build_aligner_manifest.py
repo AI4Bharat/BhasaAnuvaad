@@ -36,7 +36,7 @@ class BuildAlignerManifest(BaseStep):
         text = re.sub("[-_\n\s]+", " ", text)
         sents = [
             sent.strip()
-            for sent in re.split("[" + "".join(split_chars) + "]", text)
+            for sent in re.split("|".join(map(re.escape, split_chars)), text)
             if sent.strip() != ""
         ]
         return "ɘ".join(sents)
@@ -60,7 +60,7 @@ class BuildAlignerManifest(BaseStep):
             wav_name = in_path.split("/")[-1][:-3] + "wav"
             wav_path = f"{self.audio_out_path}/{self.language}/{wav_name}"
             duration = self._process_audio(in_path, wav_path)
-            
+
             text = js.get("alignment_text", "")
             if text:
                 text = js["alignment_text"].strip()
